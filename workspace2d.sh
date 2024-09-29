@@ -32,7 +32,8 @@ function move_workspace {
     local direction="$1"
     local screen="$2"
     local workspace="$((($3 - 1) / max_screens))"
-    local x_index, y_index
+    local x_index
+    local y_index
     x_index="$(x_value $workspace)"
     y_index="$(y_value $workspace)"
 
@@ -62,28 +63,34 @@ function move_workspace {
 }
 
 original_monitor=$(hyprctl monitors -j | jq '.[] | select(.focused) | .id, .activeWorkspace.id')
-move_workspace "$direction" "$original_monitor"
+
+move_workspace "$direction" $original_monitor
 
 if [ "$is_all" = "all" ]; then
-    all_workspaces=$(hyprctl monitors -j | jq '.[] | select(.focused | not) | .id, .activeWorkspace.id')
-    normalized_direction=$direction
+    all_ws=$(hyprctl monitors -j | jq '.[] | select(.focused | not) | .id, .activeWorkspace.id')
+    direction_all=$direction
+
+    # Normalize direction
     case "$direction" in
-        "move_left") normalized_direction="left" ;;
-        "move_right") normalized_direction="right" ;;
-        "move_up") normalized_direction="up" ;;
-        "move_down") normalized_direction="down" ;;
+        "move_left") direction_all="left" ;;
+        "move_right") direction_all="right" ;;
+        "move_up") direction_all="up" ;;
+        "move_down") direction_all="down" ;;
     esac
-    set -- "$all_workspaces"
-    while [ -n "$1" ]
-    do
+
+    set -- $all_ws
+
+    while [ -n "$1" ]; do
         if [ "$is_sync" = "sync" ]; then
-            move_workspace "$normalized_direction" "$1" "$(awk '{print $2}' <<< "$original_monitor")"
+            move_workspace "$direction_all" "$1" "$(awk '{print $2}' <<< $original_monitor)"
+
         else
-            move_workspace "$normalized_direction" "$1" "$2"
+            move_workspace "$direction_all" "$1" "$2"
         fi
         shift 2
     done
-    move_workspace "$normalized_direction" "$original_monitor"
+
+    move_workspace "$direction_all" "$original_monitor"
 fi
 
 reload_waybar

@@ -9,5 +9,9 @@ writeShellApplication {
     jq
     busybox
   ];
+  excludeShellChecks = [
+    "SC2086"
+    "SC2046"
+  ];
   text = builtins.readFile ./workspace2d.sh;
 }
