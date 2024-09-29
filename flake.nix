@@ -28,9 +28,10 @@
       };
 
       devShells.default = pkgs.mkShell {
-        packages = [
-          pkgs.jq
-          pkgs.bash
+        packages = with pkgs; [
+          jq
+          bash
+          shellcheck
         ];
       };
     });

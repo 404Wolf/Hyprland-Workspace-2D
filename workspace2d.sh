@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 
+if [ $# -ne 3 ]; then
+    echo "Usage: workspace2d.sh <direction> <all> <sync>"
+    exit 1
+fi
+
 matrix_size=5
-matrix_max=$((matrix_size ** 2))
+# matrix_max=$((matrix_size ** 2))
 max_screens=10
 direction=$1
 is_all=$2
@@ -68,8 +73,8 @@ if [ "$is_all" = "all" ]; then
         "move_up") normalized_direction="up" ;;
         "move_down") normalized_direction="down" ;;
     esac
-    set -- $all_workspaces
-    while [ ! -z "$1" ]
+    set -- "$all_workspaces"
+    while [ -n "$1" ]
     do
         if [ "$is_sync" = "sync" ]; then
             move_workspace "$normalized_direction" "$1" "$(awk '{print $2}' <<< "$original_monitor")"

@@ -1,9 +1,9 @@
 {
-  writeShellScriptBin,
+  writeShellApplication,
   jq,
   busybox,
 }:
-writeShellScriptBin {
+writeShellApplication {
   name = "workspace2d";
   runtimeInputs = [
     jq
