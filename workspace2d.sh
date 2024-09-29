@@ -5,7 +5,7 @@ if [ $# -ne 3 ]; then
     exit 1
 fi
 
-matrix_size=5
+matrix_size=8
 # matrix_max=$((matrix_size ** 2))
 max_screens=10
 direction=$1
