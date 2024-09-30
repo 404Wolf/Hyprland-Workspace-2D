@@ -7,8 +7,11 @@ Tons of credit to [Trevor](https://github.com/tnichols217) for this! This is mos
 Usage:
 `workspace2d.sh <direction> ["all" or ""] ["sync" or ""]`
 
-`all` will move all monitors in that direction\\
+`all` will move all monitors in that direction
+
 `sync` will ensure that all monitors are on the same position within the matrix, following the current active monitor
+
+`move_` moves the current active window to the workspace you are switching to
 
 Direction can be:
   - `left`
