@@ -52,14 +52,13 @@ function move_workspace {
 
     local workspace=$((max_screens * (y_index * matrix_size + x_index) + screen + 1))
 
-    hyprctl dispatch focusmonitor "$screen"
-
+    local workspace_action=""
     case "$direction" in
-        "left" | "right" | "up" | "down") hyprctl dispatch workspace $workspace ;;
-        "move_left" | "move_right" | "move_up" | "move_down") hyprctl dispatch movetoworkspace $workspace ;;
+        "left" | "right" | "up" | "down") workspace_action="dispatch workspace $workspace" ;;
+        "move_left" | "move_right" | "move_up" | "move_down") workspace_action="dispatch movetoworkspace $workspace" ;;
     esac
 
-    hyprctl dispatch moveworkspacetomonitor $workspace "$screen"
+    hyprctl --batch "dispatch focusmonitor $screen ; $workspace_action ; dispatch moveworkspacetomonitor $workspace $screen"
 }
 
 original_monitor=$(hyprctl monitors -j | jq '.[] | select(.focused) | .id, .activeWorkspace.id')
