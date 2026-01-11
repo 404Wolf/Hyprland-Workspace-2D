@@ -15,15 +15,15 @@
       pkgs = import nixpkgs {inherit system;};
     in rec {
       packages = rec {
-        default = workspace2d;
-        workspace2d = pkgs.callPackage ./package.nix {};
+        default = workspace2d-rs;
+        workspace2d-rs = pkgs.callPackage ./nix/build.nix {};
       };
 
       apps = rec {
-        default = workspace2d;
-        workspace2d = flake-utils.lib.mkApp {
+        default = workspace2d-rs;
+        workspace2d-rs = flake-utils.lib.mkApp {
           name = "workspace2d";
-          drv = packages.workspace2d;
+          drv = packages.workspace2d-rs;
         };
       };
 
@@ -32,6 +32,10 @@
           jq
           bash
           shellcheck
+          cargo
+          rustc
+          rust-analyzer
+          clippy
         ];
       };
     });
