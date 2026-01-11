@@ -2,7 +2,7 @@ mod cmd;
 mod r#impl;
 
 use clap::Parser;
-use cmd::{Args, Direction};
+use cmd::Args;
 use hyprland::data::{Monitor, Monitors};
 use hyprland::shared::{HyprData, HyprDataActive};
 use r#impl::{move_workspace, reload_waybar};
@@ -21,14 +21,14 @@ fn main() -> hyprland::Result<()> {
         let direction_all = args.direction.normalize();
 
         for monitor in monitors.iter() {
-            if monitor.id != original_monitor_id {
+            if monitor.id != original_monitor_id as i128 {
                 let workspace_to_use = if args.sync {
                     original_workspace_id
                 } else {
                     monitor.active_workspace.id
                 };
 
-                move_workspace(direction_all, monitor.id, workspace_to_use)?;
+                move_workspace(direction_all, monitor.id as i32, workspace_to_use)?;
             }
         }
 

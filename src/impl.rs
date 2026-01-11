@@ -1,18 +1,65 @@
 use crate::cmd::Direction;
+use hyprland::dispatch::{
+    Dispatch, DispatchType, MonitorIdentifier, WorkspaceIdentifier, WorkspaceIdentifierWithSpecial,
+};
 use hyprland::keyword::Keyword;
+use wrapping_coords2d::WrappingCoords2d;
 
 pub const MATRIX_SIZE: i32 = 8;
 pub const MAX_SCREENS: i32 = 10;
 
-pub fn x_value(n: i32) -> i32 {
-    n % MATRIX_SIZE
+pub fn move_workspace(
+    direction: Direction,
+    screen: i32,
+    workspace_id: i32,
+) -> hyprland::Result<i32> {
+    // Create a wrapping coordinate system for the matrix
+    let coords = WrappingCoords2d::new(MATRIX_SIZE, MATRIX_SIZE)
+        .expect("Failed to create coordinate system");
+
+    // Calculate which workspace in the matrix (subtract screen offset)
+    let workspace = ((workspace_id - 1) / MAX_SCREENS) as usize;
+
+    set_animation(direction)?;
+
+    // Calculate new position based on direction with wrapping
+    let new_workspace = match direction {
+        Direction::Left | Direction::MoveLeft => coords.shift(workspace, -1, 0),
+        Direction::Right | Direction::MoveRight => coords.shift(workspace, 1, 0),
+        Direction::Up | Direction::MoveUp => coords.shift(workspace, 0, -1),
+        Direction::Down | Direction::MoveDown => coords.shift(workspace, 0, 1),
+    };
+
+    // Convert back to workspace ID (add screen offset)
+    let target_workspace = (new_workspace as i32) * MAX_SCREENS + screen + 1;
+
+    // Focus the monitor first
+    Dispatch::call(DispatchType::FocusMonitor(MonitorIdentifier::Id(
+        screen.into(),
+    )))?;
+
+    // Move to or move window to the target workspace
+    if direction.is_move() {
+        Dispatch::call(DispatchType::MoveToWorkspace(
+            WorkspaceIdentifierWithSpecial::Id(target_workspace),
+            None,
+        ))?;
+    } else {
+        Dispatch::call(DispatchType::Workspace(WorkspaceIdentifierWithSpecial::Id(
+            target_workspace,
+        )))?;
+    }
+
+    // Move the workspace to the monitor to ensure it's on the correct screen
+    Dispatch::call(DispatchType::MoveWorkspaceToMonitor(
+        WorkspaceIdentifier::Id(target_workspace),
+        MonitorIdentifier::Id(screen.into()),
+    ))?;
+
+    Ok(target_workspace)
 }
 
-pub fn y_value(n: i32) -> i32 {
-    n / MATRIX_SIZE
-}
-
-pub fn set_animation(direction: Direction) -> hyprland::Result<()> {
+fn set_animation(direction: Direction) -> hyprland::Result<()> {
     let animation = match direction {
         Direction::Left | Direction::Right | Direction::MoveLeft | Direction::MoveRight => {
             "workspaces,1,1,default,slide"
@@ -23,50 +70,6 @@ pub fn set_animation(direction: Direction) -> hyprland::Result<()> {
     };
     Keyword::set("animation", animation)?;
     Ok(())
-}
-
-pub fn move_workspace(direction: Direction, screen: i32, workspace_id: i32) -> hyprland::Result<i32> {
-    let workspace = (workspace_id - 1) / MAX_SCREENS;
-    let mut x_index = x_value(workspace);
-    let mut y_index = y_value(workspace);
-
-    set_animation(direction)?;
-
-    match direction {
-        Direction::Left | Direction::MoveLeft => {
-            x_index = (x_index + MATRIX_SIZE - 1) % MATRIX_SIZE;
-        }
-        Direction::Right | Direction::MoveRight => {
-            x_index = (x_index + 1) % MATRIX_SIZE;
-        }
-        Direction::Up | Direction::MoveUp => {
-            y_index = (y_index + MATRIX_SIZE - 1) % MATRIX_SIZE;
-        }
-        Direction::Down | Direction::MoveDown => {
-            y_index = (y_index + 1) % MATRIX_SIZE;
-        }
-    }
-
-    let target_workspace = MAX_SCREENS * (y_index * MATRIX_SIZE + x_index) + screen + 1;
-
-    let workspace_action = if direction.is_move() {
-        format!("dispatch movetoworkspace {}", target_workspace)
-    } else {
-        format!("dispatch workspace {}", target_workspace)
-    };
-
-    let batch_cmd = format!(
-        "dispatch focusmonitor {} ; {} ; dispatch moveworkspacetomonitor {} {}",
-        screen, workspace_action, target_workspace, screen
-    );
-
-    std::process::Command::new("hyprctl")
-        .arg("--batch")
-        .arg(&batch_cmd)
-        .output()
-        .map_err(|e| hyprland::error::HyprError::CommandFailed(format!("Failed to execute hyprctl: {}", e)))?;
-
-    Ok(target_workspace)
 }
 
 pub fn reload_waybar() {
